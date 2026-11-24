@@ -8,16 +8,6 @@
     "userInterfaceStyle": "dark",
     "plugins": [
       [
-        "expo-build-properties",
-        {
-          "android": {
-            "compileSdkVersion": 35,
-            "targetSdkVersion": 35,
-            "minSdkVersion": 24
-          }
-        }
-      ],
-      [
         "react-native-google-mobile-ads",
         {
           "androidAppId": "ca-app-pub-1377554172810719~9864288747",
@@ -44,4 +34,3 @@
     }
   }
 }
-
