@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "sonicai-mobile",
+    "name": "Sonicai",
     "slug": "sonicai-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/sonicai-logo.png",
     "userInterfaceStyle": "dark",
     "plugins": [
       [
@@ -22,15 +22,13 @@
     "android": {
       "package": "com.aimusic.sonicai",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "backgroundColor": "#000000",
+        "foregroundImage": "./assets/sonicai-logo.png"
       },
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/sonicai-logo.png"
     }
   }
 }
