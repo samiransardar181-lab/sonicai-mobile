@@ -4,7 +4,7 @@
     "slug": "sonicai-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/sonicai-logo.png",
+    "icon": "./assets/file_000000007fb48211934d05565088bed3.png",
     "userInterfaceStyle": "dark",
     "plugins": [
       [
@@ -23,12 +23,12 @@
       "package": "com.aimusic.sonicai",
       "adaptiveIcon": {
         "backgroundColor": "#000000",
-        "foregroundImage": "./assets/sonicai-logo.png"
+        "foregroundImage": "./assets/file_000000007fb48211934d05565088bed3.png"
       },
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/sonicai-logo.png"
+      "favicon": "./assets/file_000000007fb48211934d05565088bed3.png"
     }
   }
 }
