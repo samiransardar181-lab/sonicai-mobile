@@ -1,7 +1,8 @@
 import { StatusBar } from 'expo-status-bar';
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Alert,
+  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -10,6 +11,17 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import mobileAds, {
+  AdEventType,
+  BannerAd,
+  BannerAdSize,
+  RewardedAd,
+  RewardedAdEventType,
+  TestIds,
+} from 'react-native-google-mobile-ads';
+
+const BANNER_UNIT_ID = __DEV__ ? TestIds.BANNER : 'ca-app-pub-1377554172810719/3261334704';
+const REWARDED_UNIT_ID = __DEV__ ? TestIds.REWARDED : 'ca-app-pub-1377554172810719/2365001171';
 
 const tracks = [
   { id: '1', title: 'Midnight Echo', artist: 'Nova Lane', duration: '2:48', accent: '#00E5FF' },
@@ -24,17 +36,68 @@ export default function App() {
   const [credits, setCredits] = useState<number>(3);
   const [prompt, setPrompt] = useState<string>('');
   const [generated, setGenerated] = useState<string | null>(null);
-  const [adLoading, setAdLoading] = useState<boolean>(false);
+  const [rewardedStatus, setRewardedStatus] = useState<'loading' | 'loaded' | 'error'>('loading');
+  const [adsReady, setAdsReady] = useState<boolean>(false);
+  const rewardedRef = useRef<RewardedAd | null>(null);
 
-  const watchRewardedAd = () => {
-    if (adLoading) return;
-    setAdLoading(true);
-    setTimeout(() => {
-      setCredits((current) => current + 5);
-      setAdLoading(false);
-      Alert.alert('Reward earned', '5 Sonic credits were added to your account.');
-    }, 1000);
-  };
+  useEffect(() => {
+    let mounted = true;
+    const timer = setTimeout(() => {
+      mobileAds()
+        .initialize()
+        .then(() => {
+          if (mounted) setAdsReady(true);
+        })
+        .catch(() => {
+          if (mounted) setAdsReady(false);
+        });
+    }, 800);
+
+    return () => {
+      mounted = false;
+      clearTimeout(timer);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!adsReady) return;
+
+    try {
+      const ad = RewardedAd.createForAdRequest(REWARDED_UNIT_ID, {
+        requestNonPersonalizedAdsOnly: false,
+      });
+      rewardedRef.current = ad;
+
+      const unsubLoaded = ad.addAdEventListener(RewardedAdEventType.LOADED, () => {
+        setRewardedStatus('loaded');
+      });
+
+      const unsubEarned = ad.addAdEventListener(RewardedAdEventType.EARNED_REWARD, () => {
+        setCredits((current) => current + 5);
+        Alert.alert('Reward earned', '5 Sonic credits were added to your account.');
+      });
+
+      const unsubClosed = ad.addAdEventListener(AdEventType.CLOSED, () => {
+        setRewardedStatus('loading');
+        ad.load();
+      });
+
+      const unsubError = ad.addAdEventListener(AdEventType.ERROR, () => {
+        setRewardedStatus('error');
+      });
+
+      ad.load();
+
+      return () => {
+        unsubLoaded();
+        unsubEarned();
+        unsubClosed();
+        unsubError();
+      };
+    } catch {
+      setRewardedStatus('error');
+    }
+  }, [adsReady]);
 
   const generateTrack = () => {
     const trimmed = prompt.trim();
@@ -79,7 +142,12 @@ export default function App() {
     );
   };
 
-  const adStatusLabel = adLoading ? 'Loading rewarded ad...' : 'Watch rewarded ad (+5)';
+  const adStatusLabel =
+    rewardedStatus === 'loaded'
+      ? 'Watch rewarded ad (+5)'
+      : rewardedStatus === 'loading'
+      ? 'Loading rewarded ad...'
+      : 'Retry rewarded ad';
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -124,8 +192,16 @@ export default function App() {
 
           <Pressable
             style={({ pressed }) => [styles.rewardButton, pressed && styles.pressed]}
-            onPress={watchRewardedAd}
-            disabled={adLoading}
+            onPress={() => {
+              if (rewardedStatus === 'error') {
+                setRewardedStatus('loading');
+                rewardedRef.current?.load();
+                return;
+              }
+              if (rewardedStatus === 'loaded') {
+                rewardedRef.current?.show();
+              }
+            }}
           >
             <Text style={styles.rewardButtonText}>{adStatusLabel}</Text>
           </Pressable>
@@ -172,6 +248,16 @@ export default function App() {
           </Pressable>
         </ScrollView>
       )}
+
+      {Platform.OS !== 'web' && adsReady ? (
+        <View style={styles.banner}>
+          <BannerAd
+            unitId={BANNER_UNIT_ID}
+            size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+            requestOptions={{ requestNonPersonalizedAdsOnly: false }}
+          />
+        </View>
+      ) : null}
 
       <View style={styles.tabBar}>
         {(['Stream', 'AI Studio', 'Settings'] as TabName[]).map((tab) => {
@@ -309,6 +395,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   dangerButtonText: { color: '#FF6B81', fontSize: 14, fontWeight: '700' },
+  banner: {
+    alignItems: 'center',
+    backgroundColor: '#050507',
+    paddingVertical: 4,
+  },
   tabBar: {
     height: 68,
     flexDirection: 'row',
@@ -329,4 +420,3 @@ const styles = StyleSheet.create({
   tabText: { color: '#98A2B3', fontSize: 13, fontWeight: '600' },
   activeTabText: { color: '#FFFFFF', fontWeight: '800' },
 });
-    
